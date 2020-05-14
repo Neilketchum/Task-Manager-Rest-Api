@@ -74,6 +74,11 @@ userSchema.methods.toJSON = function(){
     delete userObject.tokens
     return userObject
 }
+userSchema.virtual('tasks',{
+    ref : 'Task',
+    localField:'_id',
+    foreignField:'owner'
+})
 // Hashing Plan Saved before saving
 userSchema.pre('save',async function(next){
     const user = this

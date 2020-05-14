@@ -1,5 +1,6 @@
 const express = require('express')
 const User = require('../models/user')
+const Task  = require('../models/task')
 const auth = require('../middleware/auth')
 const router = new express.Router()
 router.get('/test',(req,res)=>{
@@ -77,10 +78,10 @@ router.patch('/users/update',auth,async (req,res)=>{
 })
 router.delete('/users/me',auth,async (req,res)=>{
     try {
-        // const user = await User.findByIdAndDelete(req.user._id)
-        // if(!user){
-        //     return res.status(400).send("Invaild Updates")
-        // }
+        const tasks = Task.find({
+            owner:req.user._id
+        })
+        await tasks.remove()
         await req.user.remove()
         res.send(req.user)
     } catch (error) {

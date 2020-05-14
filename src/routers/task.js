@@ -1,8 +1,13 @@
 const express = require('express');
 const router = new express.Router()
+const auth =  require('../middleware/auth')
 const Task = require('../models/task')
-router.post('/task',async (req,res)=>{
-    const task = new Task(req.body)
+router.post('/task',auth,async (req,res)=>{
+    // const task = new Task(req.body)
+    const task = new Task({
+        ...req.body,
+        owner:req.user._id
+    })
     try {
         await task.save()
         res.send(task)
@@ -10,24 +15,32 @@ router.post('/task',async (req,res)=>{
         res.status(500).send(error)
     }
 })
-router.get('/task',async (req,res)=>{
+router.get('/task',auth,async (req,res)=>{
     try {
-        const tasks = await Task.find({})
+        const tasks = await Task.find({owner:req.user._id})
         res.send(tasks)
     } catch (e) {
         res.status(500).send(e)
     }
 })
-router.get('/task/:id',async (req,res)=>{
-    const task_id = req.params.id
+router.get('/task/:id',auth,async (req,res)=>{
+    const _id = req.params.id
     try {
-        const tasks = await Task.findById((task_id))
-        res.send(tasks)
+        const task = await Task.find({
+            _id:_id,
+            owner:req.user._id
+        })
+        console.log(task)
+        res.send(task)
     } catch (error) {
         res.status(500).send(error)
     }
 })
-router.patch('/task/:id',async (req,res)=>{
+router.get('/taskall',async (req,res)=>{
+    const tasks = await Task.find({})
+    res.send(tasks)
+})
+router.patch('/task/:id',auth,async (req,res)=>{
     const updates = Object.keys(req.body)
     updatesAlowed = ['description','completed']
     const isValid = updates.every((update)=>{
@@ -37,8 +50,11 @@ router.patch('/task/:id',async (req,res)=>{
         return res.status(400).send("Invaild Updates")
     }else{
         try{
-            const task = await Task.findById(req.params.id)
 
+            const task = await Task.findOne({
+                _id:req.params.id,
+                owner:req.user._id
+            })
             updates.forEach((update)=>{
                 task[update] = req.body[update]
             })
@@ -52,13 +68,17 @@ router.patch('/task/:id',async (req,res)=>{
         }
     }
 })
-router.delete('/task/:id',async (req,res)=>{
+router.delete('/task/:id',auth,async (req,res)=>{
     try {
-        const task = await Task.findByIdAndDelete(req.params.id)
-        if(!task){
+        const task = await Task.findOne({_id:req.params.id,owner:req.user._id})
+        if(!task){  
             return res.status(400).send("Invaild Updates")
         }
-        res.send(task)
+        else{
+            await Task.deleteOne({_id:req.params.id,owner:req.user._id})
+            res.send(task)
+        }
+        
     } catch (error) {
         res.status(501).send(error)
     }
