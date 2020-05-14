@@ -19,7 +19,6 @@ router.post('/users/login',async(req,res)=>{
     }
 })
 router.post('/users',async (req, res) => {
-    
     try{
         const user = new User(req.body)
         const token = await user.generateAuthToken()
@@ -30,7 +29,7 @@ router.post('/users',async (req, res) => {
     }
 })
 
-router.get('/users',auth,async (req,res)=>{
+router.get('/users',async (req,res)=>{
     try{
         const response  = await User.find({})
         res.status(200).send(response)
@@ -50,7 +49,7 @@ router.get('/users/:id',async (req,res)=>{
         res.status(500).send(e)
     }
 })
-router.patch('/users/:id',async (req,res)=>{
+router.patch('/users/update',auth,async (req,res)=>{
     const allowedUpdates = ['name','age','email','password']
     const user_id = req.params.id
     const updates = Object.keys(req.body)
@@ -61,7 +60,7 @@ router.patch('/users/:id',async (req,res)=>{
         return res.status(400).send("Invaild Updates")
     }else{
         try {
-            const user = await User.findById(user_id)
+            const user = req.user
 
             updates.forEach((update)=>{
                 user[update] = req.body[update]
@@ -76,13 +75,14 @@ router.patch('/users/:id',async (req,res)=>{
         }
     }
 })
-router.delete('/users/:id',async (req,res)=>{
+router.delete('/users/me',auth,async (req,res)=>{
     try {
-        const user = await User.findByIdAndDelete(req.params.id)
-        if(!user){
-            return res.status(400).send("Invaild Updates")
-        }
-        res.send(user)
+        // const user = await User.findByIdAndDelete(req.user._id)
+        // if(!user){
+        //     return res.status(400).send("Invaild Updates")
+        // }
+        await req.user.remove()
+        res.send(req.user)
     } catch (error) {
         res.status(501).send(error)
     }
