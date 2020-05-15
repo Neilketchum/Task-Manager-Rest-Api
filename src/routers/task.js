@@ -37,9 +37,42 @@ router.get('/task/:id',auth,async (req,res)=>{
     }
 })
 router.get('/taskall',async (req,res)=>{
+    try {
     const tasks = await Task.find({})
     res.send(tasks)
+    } catch (error) {
+        res.status(501).send("Something Wrong")    
+    }
 })
+// Get /tasks?completed=true (return only true) /tasks?completed=false (return only flase) 
+router.get('/tasks',auth,async (req,res)=>{
+    match= {}
+    try{
+        if(req.query.completed){
+            match.completed = req.query.completed === 'true'
+        }
+        await req.user.populate({
+            path:'tasks',
+            match
+        }).execPopulate()
+        res.send(req.user.tasks)
+    }catch(e){
+            res.status(500).send("Some Error")
+    }
+})
+// router.get('/tasks-true',auth,async (req,res)=>{
+//     try{
+//         await req.user.populate({
+//             path:'tasks',
+//             match:{
+//                 completed:true
+//             }
+//         }).execPopulate()
+//         res.send(req.user.tasks)
+//     }catch(e){
+//             res.status(500).send("Some Error")
+//     }
+// })
 router.patch('/task/:id',auth,async (req,res)=>{
     const updates = Object.keys(req.body)
     updatesAlowed = ['description','completed']
