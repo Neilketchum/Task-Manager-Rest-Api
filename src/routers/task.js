@@ -47,17 +47,24 @@ router.get('/taskall',async (req,res)=>{
 // Get /tasks?completed=true (return only true) /tasks?completed=false (return only flase) 
 // GET //tasks?limit={{value}}?skip={{offset}}
 router.get('/tasks',auth,async (req,res)=>{
-    match= {}
+    const match= {}
+    const sort = {}
     try{
         if(req.query.completed){
             match.completed = req.query.completed === 'true'
+        }
+        if(req.query.sortBy){
+            const parts = req.query.sortBy.split(':')
+            sort[parts[0]] =  parts[1] === 'desc' ? 1:-1
+            console.log(sort)
         }
         await req.user.populate({
             path:'tasks',
             match,
             options:{
                 limit:parseInt(req.query.limit),
-                skip:parseInt(req.query.skip)
+                skip:parseInt(req.query.skip),
+                sort,
             }
         }).execPopulate()
         res.send(req.user.tasks)
@@ -65,19 +72,6 @@ router.get('/tasks',auth,async (req,res)=>{
             res.status(500).send("Some Error")
     }
 })
-// router.get('/tasks-true',auth,async (req,res)=>{
-//     try{
-//         await req.user.populate({
-//             path:'tasks',
-//             match:{
-//                 completed:true
-//             }
-//         }).execPopulate()
-//         res.send(req.user.tasks)
-//     }catch(e){
-//             res.status(500).send("Some Error")
-//     }
-// })
 router.patch('/task/:id',auth,async (req,res)=>{
     const updates = Object.keys(req.body)
     updatesAlowed = ['description','completed']
