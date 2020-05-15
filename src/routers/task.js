@@ -45,6 +45,7 @@ router.get('/taskall',async (req,res)=>{
     }
 })
 // Get /tasks?completed=true (return only true) /tasks?completed=false (return only flase) 
+// GET //tasks?limit={{value}}?skip={{offset}}
 router.get('/tasks',auth,async (req,res)=>{
     match= {}
     try{
@@ -53,7 +54,11 @@ router.get('/tasks',auth,async (req,res)=>{
         }
         await req.user.populate({
             path:'tasks',
-            match
+            match,
+            options:{
+                limit:parseInt(req.query.limit),
+                skip:parseInt(req.query.skip)
+            }
         }).execPopulate()
         res.send(req.user.tasks)
     }catch(e){
