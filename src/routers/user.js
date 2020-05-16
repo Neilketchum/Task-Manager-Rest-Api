@@ -50,6 +50,37 @@ router.get('/users/:id',async (req,res)=>{
         res.status(500).send(e)
     }
 })
+const multer = require('multer');
+// PROFILE PICTURE
+const avatar = multer({ 
+    limits:{
+        fileSize: 2000000 
+    },
+    fileFilter(req,file,cb){
+     if(!file.originalname.endsWith('jpg')){
+        cb(new Error('Upload jpg'))
+     }else{
+        cb(undefined,true)
+     }
+        // cb(new Error('Upload JPEG'))
+        // cb(undefined,true)
+        // cb(undefined,false)
+    }
+})
+router.post('/users/me/avatar',auth,avatar.single('avatar'),async (req,res)=>{
+    req.user.avatar = req.file.buffer
+    await req.user.save()
+    res.status(201).send("Upload Successful")
+},(error,req,res,next)=>{
+    res.status(501).send({
+        error : error.message
+    })
+})
+router.delete('/users/me/avatar',auth,async (req,res)=>{
+    req.user.avatar = undefined
+    await req.user.save()
+    res.send("Succesfully Deleted")
+})
 router.patch('/users/update',auth,async (req,res)=>{
     const allowedUpdates = ['name','age','email','password']
     const user_id = req.params.id
@@ -106,6 +137,18 @@ router.post('/users/logoutAll',auth,async (req,res)=>{
         res.send(req.user)
     } catch (error) {
         res.status(500).send(error)
+    }
+})
+router.get('/users/:id/avatar',async (req,res)=>{
+    try {
+        const user= await User.findById(req.params.id)
+        if(!user.avatar || !user){
+           res.status(501).send("No Image") 
+        }
+        res.set('Content-Type','image/jpg')
+        res.send(user.avatar)
+    } catch (error) {
+        res.status(404).send("Cant Find Avatar")
     }
 })
 module.exports = router
