@@ -2,6 +2,7 @@ const express = require('express')
 const User = require('../models/user')
 const Task  = require('../models/task')
 const auth = require('../middleware/auth')
+const Sharp = require('sharp');
 const router = new express.Router()
 router.get('/test',(req,res)=>{
     res.send("From a new file")
@@ -68,7 +69,11 @@ const avatar = multer({
     }
 })
 router.post('/users/me/avatar',auth,avatar.single('avatar'),async (req,res)=>{
-    req.user.avatar = req.file.buffer
+    const buffer = await Sharp(req.file.buffer).resize({
+        width:250,
+        height:250
+    }).png().toBuffer()
+    req.user.avatar = buffer
     await req.user.save()
     res.status(201).send("Upload Successful")
 },(error,req,res,next)=>{
@@ -145,7 +150,7 @@ router.get('/users/:id/avatar',async (req,res)=>{
         if(!user.avatar || !user){
            res.status(501).send("No Image") 
         }
-        res.set('Content-Type','image/jpg')
+        res.set('Content-Type','image/png')
         res.send(user.avatar)
     } catch (error) {
         res.status(404).send("Cant Find Avatar")
